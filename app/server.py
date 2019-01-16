@@ -31,7 +31,7 @@ async def setup_learner():
         .label_const(0, label_cls=FloatList)
         .transform(get_transforms(), size=224)
         .databunch()).normalize(imagenet_stats)
-    learn = create_cnn(data_bunch, models.resnet50, pretrained=False)
+    learn = create_cnn(data_bunch, models.resnet34, pretrained=False)
     learn.load(model_file_name)
     return learn
 
@@ -50,7 +50,7 @@ async def analyze(request):
     data = await request.form()
     img_bytes = await (data['file'].read())
     img = open_image(BytesIO(img_bytes))
-    return JSONResponse({'result': int(round(float(learn.predict(img)[0][0]),0))})
+    return learn.predict(img)[1]
 
 if __name__ == '__main__':
     if 'serve' in sys.argv: uvicorn.run(app, host='0.0.0.0', port=5042)
