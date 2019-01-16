@@ -1,11 +1,12 @@
 from starlette.applications import Starlette
-from starlette.responses import HTMLResponse
+from starlette.responses import HTMLResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 import uvicorn, aiohttp, asyncio
 from io import BytesIO
+
+from fastai import *
 from fastai.vision import *
-import base64
 
 model_file_url = 'https://drive.google.com/uc?export=download&id=1bTsndvKUg6AkfKrYtoiQY9mdZq3otN_l'
 model_file_name = 'deployment_stage-1'
@@ -22,10 +23,15 @@ async def download_file(url, dest):
             data = await response.read()
             with open(dest, 'wb') as f: f.write(data)
 
+
 async def setup_learner():
     await download_file(model_file_url, path/'models'/f'{model_file_name}.pth')
-    data_bunch = ImageDataBunch.from_folder(path, tfms=get_transforms(), size=150).normalize(imagenet_stats) 
-    learn = create_cnn(data_bunch, models.resnet34, pretrained=False)
+    data_bunch = (ImageItemList.from_folder(path)
+        .random_split_by_pct()
+        .label_const(0, label_cls=FloatList)
+        .transform(get_transforms(), size=224)
+        .databunch()).normalize(imagenet_stats)
+    learn = create_cnn(data_bunch, models.resnet50, pretrained=False)
     learn.load(model_file_name)
     return learn
 
@@ -44,7 +50,7 @@ async def analyze(request):
     data = await request.form()
     img_bytes = await (data['file'].read())
     img = open_image(BytesIO(img_bytes))
-    return JSONResponse({'result':learn.predict(img)})
+    return JSONResponse({'result': int(round(float(learn.predict(img)[0][0]),0))})
 
-if __name__ == "__main__":
-    if "serve" in sys.argv: uvicorn.run(app, host="0.0.0.0", port=8080)
+if __name__ == '__main__':
+    if 'serve' in sys.argv: uvicorn.run(app, host='0.0.0.0', port=5042)
