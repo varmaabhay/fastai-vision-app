@@ -7,8 +7,8 @@ from io import BytesIO
 from fastai.vision import *
 import base64
 
-model_file_url = 'https://drive.google.com/uc?export=download&id=18ZR6IwQ3xDH_tEWeNs8XPxhpA0ew1KQX'
-model_file_name = 'deployment_stage-1.3'
+model_file_url = 'https://drive.google.com/uc?export=download&id=1bTsndvKUg6AkfKrYtoiQY9mdZq3otN_l'
+model_file_name = 'deployment_stage-1'
 path = Path(__file__).parent
 
 app = Starlette()
